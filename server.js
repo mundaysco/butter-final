@@ -163,10 +163,74 @@ app.get("/api/clover/merchants/:id", async (req, res) => {
 });
 
 // ========== START SERVER ==========
-app.listen(PORT, () => {
+
+// ========== ITEMS AND ORDERS ROUTES ==========
+
+// Get merchant items
+app.get("/api/clover/merchants/:id/items", async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return res.status(401).json({ message: "No token" });
+        }
+        
+        const token = authHeader.split(" ")[1];
+        const merchantId = req.params.id;
+        const query = req.url.split("?")[1] || "";
+        
+        const url = \`https://apisandbox.dev.clover.com/v3/merchants/\${merchantId}/items\${query ? "?" + query : ""}\`;
+        
+        const response = await fetch(url, {
+            headers: {
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json"
+            }
+        });
+        
+        const data = await response.json();
+        res.status(response.status).json(data);
+        
+    } catch (error) {
+        console.error("Items error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+// Get merchant orders
+app.get("/api/clover/merchants/:id/orders", async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return res.status(401).json({ message: "No token" });
+        }
+        
+        const token = authHeader.split(" ")[1];
+        const merchantId = req.params.id;
+        const query = req.url.split("?")[1] || "";
+        
+        const url = \`https://apisandbox.dev.clover.com/v3/merchants/\${merchantId}/orders\${query ? "?" + query : ""}\`;
+        
+        const response = await fetch(url, {
+            headers: {
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json"
+            }
+        });
+        
+        const data = await response.json();
+        res.status(response.status).json(data);
+        
+    } catch (error) {
+        console.error("Orders error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+app\.listen\(PORT, () => {
     console.log("✅ BUTTER SERVER RUNNING on port " + PORT);
     console.log("📌 OAuth: /api/oauth/start");
     console.log("📌 Callback: /oauth/success");
     console.log("📌 API: /api/clover/*");
 });
+
 
