@@ -30,6 +30,10 @@
                         <i class="fas fa-tachometer-alt"></i>
                         <span>Dashboard</span>
                     </a>
+                    <a href="#" class="nav-item" data-section="inventory">
+                        <i class="fas fa-boxes"></i>
+                        <span>Inventory</span>
+                    </a>
                     <a href="#" class="nav-item" data-section="orders">
                         <i class="fas fa-receipt"></i>
                         <span>Orders</span>
@@ -37,10 +41,6 @@
                     <a href="#" class="nav-item" data-section="customers">
                         <i class="fas fa-users"></i>
                         <span>Customers</span>
-                    </a>
-                    <a href="#" class="nav-item" data-section="inventory">
-                        <i class="fas fa-boxes"></i>
-                        <span>Inventory</span>
                     </a>
                     <a href="#" class="nav-item" data-section="settings">
                         <i class="fas fa-cog"></i>
@@ -53,6 +53,17 @@
                         <i class="fas fa-store"></i>
                         <p>Connect to Clover to view merchant info</p>
                     </div>
+                </div>
+
+                <!-- Inventory Quick Actions -->
+                <div class="inventory-actions" id="inventoryActions" style="display: none; padding: 20px; border-top: 1px solid #34495e;">
+                    <h4 style="color: white; margin-bottom: 10px;">Inventory Tools</h4>
+                    <button class="action-btn-small" id="loadInventoryBtn" style="width: 100%; margin-bottom: 8px;">
+                        <i class="fas fa-sync"></i> Load Inventory
+                    </button>
+                    <button class="action-btn-small" id="createItemBtn" style="width: 100%; background: #4CAF50;">
+                        <i class="fas fa-plus"></i> Add Test Item
+                    </button>
                 </div>
             </aside>
 
@@ -115,62 +126,108 @@
                                 <i class="fas fa-plug"></i>
                                 <span>Connect to Clover</span>
                             </button>
-                            <button class="action-btn" id="viewOrdersBtn">
-                                <i class="fas fa-eye"></i>
-                                <span>View Recent Orders</span>
+                            <button class="action-btn" id="testLiveDataBtn" onclick="butterDashboard.testCloverConnection()">
+                                <i class="fas fa-bolt"></i>
+                                <span>Test Live Data</span>
                             </button>
-                            <button class="action-btn" id="syncInventoryBtn">
-                                <i class="fas fa-sync"></i>
-                                <span>Sync Inventory</span>
+                            <button class="action-btn" id="loadInventoryBtnMain">
+                                <i class="fas fa-boxes"></i>
+                                <span>Manage Inventory</span>
                             </button>
-                            <button class="action-btn" id="exportDataBtn">
-                                <i class="fas fa-download"></i>
-                                <span>Export Data</span>
+                            <button class="action-btn" id="createTestOrderBtn">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Create Test Order</span>
                             </button>
                         </div>
                     </div>
                     
-                    <div class="recent-activity">
-                        <h3>Recent Activity</h3>
-                        <div class="activity-list" id="activityList">
-                            <div class="activity-item">
-                                <i class="fas fa-info-circle"></i>
-                                <p>Connect to Clover to see your recent activity</p>
+                    <!-- Inventory Creation Form -->
+                    <div class="inventory-form" style="margin-top: 30px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                        <h3><i class="fas fa-plus-circle"></i> Create Test Inventory Item</h3>
+                        <form id="createItemForm">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <label>Item Name</label>
+                                    <input type="text" id="itemName" placeholder="e.g., Test Burger" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                </div>
+                                <div>
+                                    <label>Price (in cents)</label>
+                                    <input type="number" id="itemPrice" placeholder="999" value="999" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                    <small style="color: #666;">999 = $9.99</small>
+                                </div>
+                                <div>
+                                    <label>SKU (Optional)</label>
+                                    <input type="text" id="itemSku" placeholder="SKU-001" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                </div>
                             </div>
-                        </div>
+                            <button type="submit" class="action-btn" style="background: #4CAF50;">
+                                <i class="fas fa-plus"></i> Create Item in Clover
+                            </button>
+                        </form>
                     </div>
                 </div>
 
-                <!-- Other sections (initially hidden) -->
-                <div class="section" id="ordersSection">Orders content...</div>
-                <div class="section" id="customersSection">Customers content...</div>
-                <div class="section" id="inventorySection">Inventory content...</div>
-                <div class="section" id="settingsSection">Settings content...</div>
+                <!-- Inventory Section (initially hidden) -->
+                <div class="section" id="inventorySection" style="display: none;">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+
+                <!-- Other sections -->
+                <div class="section" id="ordersSection" style="display: none;">Orders content...</div>
+                <div class="section" id="customersSection" style="display: none;">Customers content...</div>
+                <div class="section" id="settingsSection" style="display: none;">Settings content...</div>
             </section>
         </main>
 
         <!-- Footer -->
         <footer class="footer">
-            <p>?? Butter Clover Integration v1.0 | <span id="currentYear"></span></p>
+            <p>?? Butter Clover Integration v2.0 | <span id="currentYear"></span></p>
             <p class="debug-info">
                 API Status: <span id="apiStatus">Checking...</span> | 
-                Merchant: <span id="merchantId">Not connected</span>
+                Merchant: <span id="merchantIdDisplay">Not connected</span>
             </p>
         </footer>
     </div>
 
-    <!-- Modal for OAuth -->
-    <div class="modal" id="oauthModal">
-        <div class="modal-content">
-            <h3><i class="fas fa-external-link-alt"></i> Connect to Clover</h3>
-            <p>You'll be redirected to Clover to authorize this app.</p>
-            <div class="modal-buttons">
-                <button class="btn-secondary" id="cancelOauthBtn">Cancel</button>
-                <button class="btn-primary" id="confirmOauthBtn">Continue to Clover</button>
-            </div>
-        </div>
-    </div>
-
     <script src="app.js"></script>
+    <script>
+        // Set current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        
+        // Navigation handler
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const section = this.getAttribute('data-section');
+                
+                // Hide all sections
+                document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+                
+                // Show selected section
+                const targetSection = document.getElementById(section + 'Section');
+                if (targetSection) {
+                    targetSection.style.display = 'block';
+                }
+                
+                // Update active nav item
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Load inventory if navigating to inventory section
+                if (section === 'inventory' && window.butterDashboard && window.butterDashboard.token) {
+                    window.butterDashboard.loadInventory();
+                }
+            });
+        });
+        
+        // Update merchant ID display
+        setInterval(() => {
+            const merchantId = localStorage.getItem('clover_merchant_id');
+            if (merchantId) {
+                document.getElementById('merchantIdDisplay').textContent = merchantId.substring(0, 8) + '...';
+                document.getElementById('merchantIdDisplay').style.color = '#4CAF50';
+            }
+        }, 1000);
+    </script>
 </body>
 </html>
