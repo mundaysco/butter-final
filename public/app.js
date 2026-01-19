@@ -1,8 +1,8 @@
 // Butter Dashboard Frontend Application
 class ButterDashboard {
     constructor() {
-        this.currentMerchant = null;
-        this.accessToken = null;
+        this.accessToken = localStorage.getItem('clover_access_token');
+        this.merchantId = localStorage.getItem('clover_merchant_id');
         this.init();
     }
 
@@ -11,28 +11,16 @@ class ButterDashboard {
         this.setupNavigation();
         this.checkAuthStatus();
         this.updateCurrentYear();
+        this.checkOAuthSuccess();
         
-        // Check URL for OAuth callback
-        this.checkOAuthCallback();
+        // Initialize UI based on auth state
+        this.updateUIForAuthState();
     }
 
     setupEventListeners() {
         // Connect to Clover button
         document.getElementById('connectCloverBtn').addEventListener('click', () => {
             this.showOAuthModal();
-        });
-
-        // Other action buttons
-        document.getElementById('viewOrdersBtn').addEventListener('click', () => {
-            this.switchSection('orders');
-        });
-
-        document.getElementById('syncInventoryBtn').addEventListener('click', () => {
-            this.syncInventory();
-        });
-
-        document.getElementById('exportDataBtn').addEventListener('click', () => {
-            this.exportData();
         });
 
         // OAuth modal buttons
@@ -50,6 +38,31 @@ class ButterDashboard {
                 this.hideOAuthModal();
             }
         });
+
+        // Other action buttons
+        document.getElementById('viewOrdersBtn').addEventListener('click', () => {
+            if (this.accessToken) {
+                this.switchSection('orders');
+            } else {
+                this.showMessage('Please connect to Clover first', 'error');
+            }
+        });
+
+        document.getElementById('syncInventoryBtn').addEventListener('click', () => {
+            if (this.accessToken) {
+                this.syncInventory();
+            } else {
+                this.showMessage('Please connect to Clover first', 'error');
+            }
+        });
+
+        document.getElementById('exportDataBtn').addEventListener('click', () => {
+            if (this.accessToken) {
+                this.exportData();
+            } else {
+                this.showMessage('Please connect to Clover first', 'error');
+            }
+        });
     }
 
     setupNavigation() {
@@ -58,6 +71,13 @@ class ButterDashboard {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 const section = item.getAttribute('data-section');
+                
+                // Check if section requires auth
+                if (section !== 'dashboard' && !this.accessToken) {
+                    this.showMessage('Please connect to Clover to access this section', 'error');
+                    return;
+                }
+                
                 this.switchSection(section);
                 
                 // Update active state
@@ -89,39 +109,86 @@ class ButterDashboard {
             const apiStatus = document.getElementById('apiStatus');
             
             if (data.credentials_configured) {
-                authStatus.innerHTML = '<span class="status-dot"></span><span>? Backend configured</span>';
+                authStatus.innerHTML = '<span class="status-dot"></span><span>? Backend ready</span>';
                 authStatus.classList.add('connected');
                 apiStatus.textContent = '? Online';
                 apiStatus.style.color = '#4CAF50';
             } else {
-                authStatus.innerHTML = '<span class="status-dot"></span><span>? Backend not configured</span>';
+                authStatus.innerHTML = '<span class="status-dot"></span><span>?? Backend needs config</span>';
                 authStatus.classList.add('error');
-                apiStatus.textContent = '?? Configuration needed';
+                apiStatus.textContent = '?? Check config';
                 apiStatus.style.color = '#ff9800';
             }
+            
+            // Update merchant ID display
+            if (this.merchantId) {
+                document.getElementById('merchantId').textContent = this.merchantId.substring(0, 8) + '...';
+                document.getElementById('merchantId').style.color = '#4CAF50';
+            }
+            
         } catch (error) {
             console.error('Health check failed:', error);
-            document.getElementById('authStatus').innerHTML = '<span class="status-dot"></span><span>? Cannot reach server</span>';
+            document.getElementById('authStatus').innerHTML = '<span class="status-dot"></span><span>? Server offline</span>';
             document.getElementById('apiStatus').textContent = '? Offline';
             document.getElementById('apiStatus').style.color = '#f44336';
         }
     }
 
-    checkOAuthCallback() {
+    checkOAuthSuccess() {
         const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const error = urlParams.get('error');
-        
-        if (code) {
-            // We came back from OAuth with a code
-            this.showMessage('Processing OAuth callback...', 'info');
-            this.handleOAuthCallback(code);
-        } else if (error) {
-            this.showMessage(`OAuth Error: ${error}`, 'error');
+        if (urlParams.get('oauth_success') === 'true') {
+            this.showMessage('? Successfully connected to Clover!', 'success');
+            this.updateUIForAuthState();
+            
+            // Clean URL
+            window.history.replaceState({}, document.title, '/');
+        }
+    }
+
+    updateUIForAuthState() {
+        if (this.accessToken) {
+            // User is authenticated
+            document.getElementById('connectCloverBtn').innerHTML = '<i class="fas fa-check"></i><span>Connected to Clover</span>';
+            document.getElementById('connectCloverBtn').style.background = '#4CAF50';
+            
+            // Update merchant info
+            const merchantInfo = document.getElementById('merchantInfo');
+            merchantInfo.innerHTML = `
+                <div class="merchant-details">
+                    <h4><i class="fas fa-store"></i> Merchant Connected</h4>
+                    <p><i class="fas fa-id-card"></i> ID: ${this.merchantId ? this.merchantId.substring(0, 8) + '...' : 'N/A'}</p>
+                    <p><i class="fas fa-key"></i> Token: ${this.accessToken.substring(0, 10)}...</p>
+                    <p><i class="fas fa-clock"></i> Connected: Just now</p>
+                </div>
+            `;
+            
+            // Enable other sections
+            document.querySelectorAll('.nav-item:not([data-section="dashboard"])').forEach(item => {
+                item.style.opacity = '1';
+                item.style.cursor = 'pointer';
+            });
+            
+            // Load sample data
+            this.loadSampleData();
+            
+        } else {
+            // User not authenticated
+            document.getElementById('connectCloverBtn').innerHTML = '<i class="fas fa-plug"></i><span>Connect to Clover</span>';
+            document.getElementById('connectCloverBtn').style.background = '#3498db';
+            
+            // Disable other sections
+            document.querySelectorAll('.nav-item:not([data-section="dashboard"])').forEach(item => {
+                item.style.opacity = '0.5';
+                item.style.cursor = 'not-allowed';
+            });
         }
     }
 
     showOAuthModal() {
+        if (this.accessToken) {
+            this.showMessage('Already connected to Clover!', 'info');
+            return;
+        }
         document.getElementById('oauthModal').style.display = 'flex';
     }
 
@@ -129,48 +196,33 @@ class ButterDashboard {
         document.getElementById('oauthModal').style.display = 'none';
     }
 
-    startOAuthFlow() {
-        // This will redirect to your existing OAuth endpoint
-        window.location.href = '/';
-    }
-
-    async handleOAuthCallback(code) {
+    async startOAuthFlow() {
+        this.hideOAuthModal();
+        this.showMessage('Starting OAuth flow...', 'info');
+        
         try {
-            // In a real app, you would send this code to your backend
-            // For now, we'll just show a success message
-            this.showMessage('? Successfully connected to Clover!', 'success');
-            this.hideOAuthModal();
+            const response = await fetch('/api/oauth/start');
+            const data = await response.json();
             
-            // Simulate fetching merchant data
-            this.simulateMerchantData();
-            
+            if (data.success) {
+                // Redirect to Clover OAuth
+                window.location.href = data.auth_url;
+            } else {
+                this.showMessage('Failed to start OAuth', 'error');
+            }
         } catch (error) {
-            console.error('OAuth callback error:', error);
-            this.showMessage(`Failed to complete OAuth: ${error.message}`, 'error');
+            console.error('OAuth start error:', error);
+            this.showMessage('Cannot reach server', 'error');
         }
     }
 
-    simulateMerchantData() {
-        // Simulate API calls and update UI
+    loadSampleData() {
+        // Simulate loading data
         setTimeout(() => {
             document.getElementById('todayRevenue').textContent = '$1,234.56';
             document.getElementById('totalOrders').textContent = '42';
             document.getElementById('newCustomers').textContent = '8';
             document.getElementById('avgOrderValue').textContent = '$45.67';
-            
-            document.getElementById('merchantId').textContent = 'Connected';
-            document.getElementById('merchantId').style.color = '#4CAF50';
-            
-            // Update merchant info panel
-            const merchantInfo = document.getElementById('merchantInfo');
-            merchantInfo.innerHTML = `
-                <div class="merchant-details">
-                    <h4><i class="fas fa-store"></i> Test Merchant</h4>
-                    <p><i class="fas fa-map-marker-alt"></i> New York, NY</p>
-                    <p><i class="fas fa-phone"></i> (555) 123-4567</p>
-                    <p><i class="fas fa-calendar"></i> Joined: Today</p>
-                </div>
-            `;
             
             // Update activity list
             const activityList = document.getElementById('activityList');
@@ -190,8 +242,12 @@ class ButterDashboard {
                     <p>New customer registered: John Doe</p>
                     <span class="activity-time">1 hour ago</span>
                 </div>
+                <div class="activity-item">
+                    <i class="fas fa-sync" style="color: #9C27B0;"></i>
+                    <p>Inventory synced with Clover</p>
+                    <span class="activity-time">2 hours ago</span>
+                </div>
             `;
-            
         }, 1000);
     }
 
@@ -200,6 +256,16 @@ class ButterDashboard {
         // Simulate API call
         setTimeout(() => {
             this.showMessage('? Inventory synced successfully!', 'success');
+            // Add to activity list
+            const activityList = document.getElementById('activityList');
+            const newActivity = document.createElement('div');
+            newActivity.className = 'activity-item';
+            newActivity.innerHTML = `
+                <i class="fas fa-sync" style="color: #9C27B0;"></i>
+                <p>Manual inventory sync completed</p>
+                <span class="activity-time">Just now</span>
+            `;
+            activityList.insertBefore(newActivity, activityList.firstChild);
         }, 2000);
     }
 
@@ -207,8 +273,7 @@ class ButterDashboard {
         this.showMessage('Preparing data export...', 'info');
         // Simulate export process
         setTimeout(() => {
-            this.showMessage('? Data exported successfully! Download starting...', 'success');
-            // In real app, trigger download
+            this.showMessage('? Data exported successfully!', 'success');
         }, 1500);
     }
 
