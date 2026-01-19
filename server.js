@@ -1,5 +1,5 @@
 // ============================================
-// BUTTER CLOVER OAUTH - CLEAN WORKING VERSION
+// BUTTER CLOVER OAUTH - FINAL WORKING VERSION
 // ============================================
 
 const express = require("express");
@@ -7,21 +7,19 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ENVIRONMENT VARIABLES - Set these in Render!
+// ENVIRONMENT VARIABLES
 const CLIENT_ID = process.env.CLOVER_CLIENT_ID;
 const CLIENT_SECRET = process.env.CLOVER_CLIENT_SECRET;
 
 // CORRECT SANDBOX URLs
 const CLOVER_AUTH_URL = "https://sandbox.dev.clover.com/oauth/v2/authorize";
-const CLOVER_TOKEN_URL = "https://sandbox.dev.clover.com/auth-token/oauth/v2/token";
+const CLOVER_TOKEN_URL = "https://sandbox.dev.clover.com/oauth/v2/token";
 
 console.log("? Server starting...");
 console.log("?? Auth URL:", CLOVER_AUTH_URL);
-console.log("?? Client ID configured?", !!CLIENT_ID);
 
 // ============ HOME PAGE ============
 app.get("/", (req, res) => {
-    // Force HTTPS for Render (Render uses HTTPS in production)
     const protocol = "https";
     const host = req.get("host");
     const baseUrl = `${protocol}://${host}`;
@@ -46,7 +44,6 @@ app.get("/", (req, res) => {
                 <h1>?? Butter Clover Integration</h1>
                 <p><strong>Callback URL:</strong> ${callbackUrl}</p>
                 <a href="${authUrl}" class="btn">Start Clover OAuth</a>
-                <p><em>Make sure Clover App Settings match this exact callback URL</em></p>
             </div>
         </body>
         </html>
@@ -66,7 +63,6 @@ app.get("/callback", async (req, res) => {
     }
 
     try {
-        // Force HTTPS for Render
         const protocol = "https";
         const host = req.get("host");
         const baseUrl = `${protocol}://${host}`;
@@ -74,17 +70,25 @@ app.get("/callback", async (req, res) => {
 
         console.log("?? Exchanging code for token...");
         
-        const tokenResponse = await axios.post(CLOVER_TOKEN_URL, new URLSearchParams({
+        // IMPORTANT: Clover expects JSON payload
+        const tokenData = {
             client_id: CLIENT_ID,
             client_secret: CLIENT_SECRET,
             code: code,
             redirect_uri: redirectUri,
             grant_type: "authorization_code"
-        }), {
-            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+        };
+
+        console.log("Token request data:", JSON.stringify(tokenData));
+        
+        const tokenResponse = await axios.post(CLOVER_TOKEN_URL, tokenData, {
+            headers: { 
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
         });
 
-        const { access_token, merchant_id, employee_id } = tokenResponse.data;
+        const { access_token, merchant_id } = tokenResponse.data;
         
         console.log("? OAuth Success! Merchant ID:", merchant_id);
         
@@ -112,6 +116,8 @@ app.get("/callback", async (req, res) => {
 
     } catch (error) {
         console.error("? Token exchange failed:", error.response?.data || error.message);
+        console.error("Full error:", error.response?.config?.data || "No request data");
+        
         res.send(`
             <h1 style="color: red;">? Token Exchange Failed</h1>
             <p><strong>Error:</strong> ${error.response?.data?.error_description || error.message}</p>
