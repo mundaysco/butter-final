@@ -7,6 +7,22 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Serve static files from public directory
+app.use(express.static('public'));
+
+// Redirect root to new UI
+app.get('/', (req, res) => {
+    // Check if it's an OAuth callback (has code parameter)
+    if (req.query.code || req.query.error) {
+        // Handle OAuth callback - your existing code
+        // ... (keep your existing OAuth callback logic here)
+    } else {
+        // Serve the new UI
+        res.sendFile(__dirname + '/public/index.html');
+    }
+});
+
+
 // ENVIRONMENT VARIABLES
 const CLIENT_ID = process.env.CLOVER_CLIENT_ID;
 const CLIENT_SECRET = process.env.CLOVER_CLIENT_SECRET;
