@@ -42,21 +42,32 @@ app.get("/oauth/success", async (req, res) => {
     }
     
     try {
-        // Exchange code for API token
+                // Exchange code for API token - CORRECT VERSION
         console.log("Exchanging code for API token...");
+        
         const tokenResponse = await fetch("https://apisandbox.dev.clover.com/oauth/token", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+            headers: { 
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
                 client_id: "JD06DKTZ0E7MT",
                 client_secret: process.env.CLOVER_CLIENT_SECRET,
                 code: code,
                 grant_type: "authorization_code",
                 redirect_uri: "https://butter-final.onrender.com/oauth/success"
-            })
+            }).toString()
         });
         
+        console.log("Token exchange status:", tokenResponse.status);
         const tokenData = await tokenResponse.json();
+        console.log("Token exchange result:", tokenData);
+        
+        if (!tokenData.access_token) {
+            console.error("ERROR: No access_token in response!");
+            // For debugging, send the error to browser
+            return res.send("<h2>Token Exchange Failed</h2><pre>" + JSON.stringify(tokenData, null, 2) + "</pre>");
+        }
         console.log("Token exchange result:", tokenData);
         
         if (!tokenData.access_token) {
@@ -158,3 +169,4 @@ app.listen(PORT, () => {
     console.log("📌 Callback: /oauth/success");
     console.log("📌 API: /api/clover/*");
 });
+
