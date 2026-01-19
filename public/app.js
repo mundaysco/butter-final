@@ -1,4 +1,4 @@
-// Enhanced Butter Dashboard with Real-Time Inventory Management
+// Enhanced Butter Dashboard with Merchant ID Auto-Fetch
 class ButterDashboard {
     constructor() {
         this.token = localStorage.getItem('clover_access_token');
@@ -11,47 +11,20 @@ class ButterDashboard {
         this.setupButtons();
         this.checkAuth();
         this.updateUI();
-        this.setupEventListeners();
-        
-        // Start real-time monitoring if connected
-        if (this.token && this.merchantId) {
-            setTimeout(() => this.startRealTimeMonitor(), 2000);
-        }
     }
 
     setupButtons() {
-        // Connect to Clover button
         const connectBtn = document.getElementById('connectCloverBtn');
         if (connectBtn) {
             connectBtn.addEventListener('click', () => {
                 window.location.href = '/api/oauth/start';
             });
         }
-    }
 
-    setupEventListeners() {
-        // Setup test buttons
-        this.setupTestButton('testConnectionBtn', () => this.testLiveConnection());
-        this.setupTestButton('loadInventoryBtn', () => this.loadInventory());
-        this.setupTestButton('createItemBtn', () => this.createSampleItem());
-        this.setupTestButton('createMenuBtn', () => this.createSampleMenu());
-        this.setupTestButton('startMonitorBtn', () => this.startRealTimeMonitor());
-        this.setupTestButton('stopMonitorBtn', () => this.stopRealTimeMonitor());
-        
-        // Setup form submission
-        const createItemForm = document.getElementById('createItemForm');
-        if (createItemForm) {
-            createItemForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.createCustomItem();
-            });
-        }
-    }
-
-    setupTestButton(buttonId, handler) {
-        const button = document.getElementById(buttonId);
-        if (button) {
-            button.addEventListener('click', handler);
+        // Test connection button
+        const testBtn = document.getElementById('testConnectionBtn');
+        if (testBtn) {
+            testBtn.addEventListener('click', () => this.testConnection());
         }
     }
 
@@ -61,48 +34,19 @@ class ButterDashboard {
             if (this.token) {
                 statusEl.innerHTML = '<span class="status-dot"></span><span>? Connected to Clover</span>';
                 statusEl.classList.add('connected');
-                document.getElementById('apiStatus').textContent = '? Online';
-                document.getElementById('apiStatus').style.color = '#4CAF50';
             } else {
                 statusEl.innerHTML = '<span class="status-dot"></span><span>?? Not connected</span>';
-                document.getElementById('apiStatus').textContent = '?? Offline';
-                document.getElementById('apiStatus').style.color = '#ff9800';
             }
         }
     }
 
     updateUI() {
-        if (this.token && this.merchantId) {
-            // Update merchant info
-            const merchantInfo = document.getElementById('merchantInfo');
-            if (merchantInfo) {
-                merchantInfo.innerHTML = `
-                    <div class="merchant-details">
-                        <h4><i class="fas fa-store"></i> Clover Merchant</h4>
-                        <p><i class="fas fa-id-card"></i> ID: ${this.merchantId.substring(0, 8)}...</p>
-                        <p><i class="fas fa-key"></i> Token: ${this.token.substring(0, 10)}...</p>
-                        <p><i class="fas fa-clock"></i> Connected: ${new Date().toLocaleTimeString()}</p>
-                        <div class="action-buttons-small">
-                            <button class="action-btn-small" id="testConnectionBtn">
-                                <i class="fas fa-bolt"></i> Test Connection
-                            </button>
-                            <button class="action-btn-small" id="startMonitorBtn">
-                                <i class="fas fa-play"></i> Start Monitor
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-
-            // Enable all action buttons
+        if (this.token) {
+            // Enable action buttons
             document.querySelectorAll('.action-btn:not(#connectCloverBtn)').forEach(btn => {
                 btn.disabled = false;
                 btn.style.opacity = '1';
             });
-
-            // Show inventory tools
-            const inventoryTools = document.getElementById('inventoryTools');
-            if (inventoryTools) inventoryTools.style.display = 'block';
 
             // Load real data
             this.loadRealCloverData();
@@ -116,435 +60,132 @@ class ButterDashboard {
         }
     }
 
-    // ============ REAL-TIME CONNECTION TEST ============
-    async testLiveConnection() {
-        const testBtn = document.getElementById('testConnectionBtn');
-        const originalText = testBtn ? testBtn.innerHTML : '';
-        
-        if (testBtn) {
-            testBtn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Testing...';
-            testBtn.disabled = true;
+    // ============ MERCHANT ID AUTO-FETCH ============
+    async fetchMerchantId() {
+        if (!this.token) {
+            console.error('? No token available');
+            return null;
         }
-        
-        this.showMessage('Testing live connection to Clover...', 'info');
+
+        console.log('?? Fetching merchant ID from Clover API...');
         
         try {
-            console.log('?? Testing real-time connection...');
-            
-            // Test 1: Fetch merchant info (basic GET)
-            const merchantRes = await fetch(`/api/clover/merchants/${this.merchantId}`, {
+            // Try endpoint for current merchant
+            const response = await fetch('/api/clover/merchants/me', {
                 headers: {
                     'Authorization': 'Bearer ' + this.token,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!merchantRes.ok) throw new Error(`HTTP ${merchantRes.status}`);
-            
-            const merchantData = await merchantRes.json();
-            
-            // Test 2: Create a test item (POST)
-            const testItem = {
-                name: `Connection Test ${Date.now()}`,
-                price: 100, // $1.00
-                sku: `TEST-${Date.now()}`
-            };
-            
-            const createRes = await fetch(`/api/clover/merchants/${this.merchantId}/items`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + this.token,
-                    'Content-Type': 'application/json',
                     'accept': 'application/json'
-                },
-                body: JSON.stringify(testItem)
-            });
-            
-            if (!createRes.ok) throw new Error(`Create failed: HTTP ${createRes.status}`);
-            
-            const createdItem = await createRes.json();
-            
-            // Test 3: Delete the test item (DELETE)
-            const deleteRes = await fetch(`/api/clover/merchants/${this.merchantId}/items/${createdItem.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': 'Bearer ' + this.token
                 }
             });
-            
-            // All tests passed!
-            this.showMessage(`? REAL-TIME CONNECTION VERIFIED! Created and deleted test item. Merchant: ${merchantData.name || 'Clover Store'}`, 'success');
-            
-            console.log('? REAL-TIME TESTS PASSED:');
-            console.log('  ? GET merchant data');
-            console.log('  ? POST create item');
-            console.log('  ? DELETE item');
-            console.log('Merchant:', merchantData.name);
-            console.log('Test item created/deleted:', createdItem.id);
-            
-            // Update button
-            if (testBtn) {
-                testBtn.innerHTML = '<i class="fas fa-check"></i> Connection Verified';
-                testBtn.style.background = '#4CAF50';
-                setTimeout(() => {
-                    testBtn.innerHTML = originalText;
-                    testBtn.style.background = '';
-                    testBtn.disabled = false;
-                }, 3000);
-            }
-            
-            return true;
-            
-        } catch (error) {
-            console.error('? Real-time connection test failed:', error);
-            this.showMessage(`? Connection test failed: ${error.message}`, 'error');
-            
-            if (testBtn) {
-                testBtn.innerHTML = '<i class="fas fa-times"></i> Test Failed';
-                testBtn.style.background = '#f44336';
-                setTimeout(() => {
-                    testBtn.innerHTML = originalText;
-                    testBtn.style.background = '';
-                    testBtn.disabled = false;
-                }, 3000);
-            }
-            return false;
-        }
-    }
 
-    // ============ INVENTORY MANAGEMENT ============
-    async loadInventory() {
-        try {
-            this.showMessage('Loading inventory...', 'info');
-            console.log('?? Fetching inventory...');
-            
-            const response = await fetch(`/api/clover/merchants/${this.merchantId}/items?limit=50`, {
-                headers: {
-                    'Authorization': 'Bearer ' + this.token
-                }
-            });
-            
-            const data = await response.json();
-            
-            if (data.elements && data.elements.length > 0) {
-                this.displayInventory(data.elements);
-                this.showMessage(`? Loaded ${data.elements.length} inventory items`, 'success');
-                console.log(`Found ${data.elements.length} items`);
-            } else {
-                this.showMessage('?? Inventory is empty. Create some items!', 'info');
-                this.displayInventory([]);
-                console.log('Inventory is empty');
-            }
-            
-        } catch (error) {
-            console.error('Failed to load inventory:', error);
-            this.showMessage('? Failed to load inventory', 'error');
-        }
-    }
+            if (response.ok) {
+                const data = await response.json();
+                console.log('API response:', data);
 
-    displayInventory(items) {
-        // Create or get inventory section
-        let inventorySection = document.getElementById('inventorySection');
-        if (!inventorySection) {
-            inventorySection = document.createElement('div');
-            inventorySection.className = 'section';
-            inventorySection.id = 'inventorySection';
-            document.querySelector('.content-area').appendChild(inventorySection);
-        }
-        
-        let html = `
-            <h3><i class="fas fa-boxes"></i> Inventory Items (${items.length})</h3>
-            <div class="inventory-controls">
-                <button class="btn" onclick="butterDashboard.createSampleItem()">
-                    <i class="fas fa-plus"></i> Add Test Item
-                </button>
-                <button class="btn" onclick="butterDashboard.loadInventory()">
-                    <i class="fas fa-sync"></i> Refresh
-                </button>
-            </div>
-        `;
-        
-        if (items.length === 0) {
-            html += '<div class="empty-state"><i class="fas fa-inbox"></i><p>No items in inventory</p></div>';
-        } else {
-            html += `
-                <div class="inventory-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Price</th>
-                                <th>SKU</th>
-                                <th>ID</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-            
-            items.forEach(item => {
-                const price = item.price ? '$' + (item.price / 100).toFixed(2) : '$0.00';
-                const shortId = item.id ? item.id.substring(0, 8) + '...' : 'N/A';
-                html += `
-                    <tr>
-                        <td><strong>${item.name || 'Unnamed'}</strong></td>
-                        <td>${price}</td>
-                        <td><code>${item.sku || 'N/A'}</code></td>
-                        <td><small>${shortId}</small></td>
-                        <td>
-                            <button class="btn-small" onclick="butterDashboard.editItemPrompt('${item.id}')">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <button class="btn-small btn-danger" onclick="butterDashboard.deleteItem('${item.id}')">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-            
-            html += '</tbody></table></div>';
-        }
-        
-        inventorySection.innerHTML = html;
-        
-        // Show this section
-        this.showSection('inventory');
-    }
-
-    async createSampleItem() {
-        const itemName = `Test Item ${new Date().toLocaleTimeString()}`;
-        const itemPrice = Math.floor(Math.random() * 2000) + 100; // $1.00 - $20.00
-        const itemSku = `TEST-${Date.now()}`;
-        
-        await this.createInventoryItem(itemName, itemPrice, itemSku);
-    }
-
-    async createCustomItem() {
-        const name = document.getElementById('itemName')?.value || `Custom Item ${Date.now()}`;
-        const price = parseInt(document.getElementById('itemPrice')?.value) || 999;
-        const sku = document.getElementById('itemSku')?.value || `CUSTOM-${Date.now()}`;
-        
-        await this.createInventoryItem(name, price, sku);
-        
-        // Clear form
-        if (document.getElementById('itemName')) document.getElementById('itemName').value = '';
-        if (document.getElementById('itemPrice')) document.getElementById('itemPrice').value = '';
-        if (document.getElementById('itemSku')) document.getElementById('itemSku').value = '';
-    }
-
-    async createInventoryItem(name, price, sku) {
-        try {
-            this.showMessage(`Creating item: ${name}...`, 'info');
-            console.log(`Creating item: ${name}, Price: $${(price/100).toFixed(2)}`);
-            
-            const response = await fetch(`/api/clover/merchants/${this.merchantId}/items`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + this.token,
-                    'Content-Type': 'application/json',
-                    'accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    name: name,
-                    price: price,
-                    sku: sku
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (data.id) {
-                this.showMessage(`? Created: ${data.name} for $${(data.price/100).toFixed(2)}`, 'success');
-                console.log('? Item created:', data);
+                // Handle different response formats
+                let merchantId = null;
                 
-                // Refresh inventory after a short delay
-                setTimeout(() => this.loadInventory(), 1000);
-                return data;
-            } else {
-                throw new Error('Item creation failed - no ID returned');
+                if (data.id) {
+                    merchantId = data.id; // Direct ID
+                } else if (data.elements && data.elements[0] && data.elements[0].id) {
+                    merchantId = data.elements[0].id; // Array format
+                } else if (data.merchant && data.merchant.id) {
+                    merchantId = data.merchant.id; // Nested format
+                }
+
+                if (merchantId) {
+                    console.log('? Found merchant ID:', merchantId);
+                    localStorage.setItem('clover_merchant_id', merchantId);
+                    this.merchantId = merchantId;
+                    return merchantId;
+                }
             }
-            
+
+            // If /me doesn't work, try to list merchants
+            console.log('Trying merchants list endpoint...');
+            const listResponse = await fetch('/api/clover/merchants?limit=1', {
+                headers: {
+                    'Authorization': 'Bearer ' + this.token
+                }
+            });
+
+            if (listResponse.ok) {
+                const listData = await listResponse.json();
+                if (listData.elements && listData.elements[0] && listData.elements[0].id) {
+                    const merchantId = listData.elements[0].id;
+                    console.log('? Found merchant ID from list:', merchantId);
+                    localStorage.setItem('clover_merchant_id', merchantId);
+                    this.merchantId = merchantId;
+                    return merchantId;
+                }
+            }
+
+            console.warn('?? Could not find merchant ID in API response');
+            return null;
+
         } catch (error) {
-            console.error('Failed to create item:', error);
-            this.showMessage(`? Failed to create item: ${error.message}`, 'error');
+            console.error('? Failed to fetch merchant ID:', error);
             return null;
         }
     }
 
-    async createSampleMenu() {
-        this.showMessage('Creating sample menu...', 'info');
-        
-        const sampleItems = [
-            { name: "Classic Burger", price: 1299, sku: "BURGER-001" },
-            { name: "Cheese Burger", price: 1499, sku: "BURGER-002" },
-            { name: "French Fries", price: 499, sku: "FRY-001" },
-            { name: "Soda", price: 299, sku: "DRINK-001" },
-            { name: "Ice Cream", price: 699, sku: "DESSERT-001" }
-        ];
-        
-        let createdCount = 0;
-        
-        for (const item of sampleItems) {
-            try {
-                await this.createInventoryItem(item.name, item.price, item.sku);
-                createdCount++;
-                await new Promise(resolve => setTimeout(resolve, 500)); // Delay between creations
-            } catch (error) {
-                console.error(`Failed to create ${item.name}:`, error);
-            }
+    async ensureMerchantId() {
+        // If we have a valid merchant ID, use it
+        if (this.merchantId && this.merchantId !== 'unknown' && this.merchantId.length > 10) {
+            return true;
         }
-        
-        this.showMessage(`? Created ${createdCount} sample menu items`, 'success');
-    }
 
-    async editItemPrompt(itemId) {
-        const newName = prompt('Enter new item name:');
-        if (!newName) return;
-        
-        const newPrice = prompt('Enter new price in cents (e.g., 999 for $9.99):');
-        if (!newPrice) return;
-        
-        try {
-            this.showMessage('Updating item...', 'info');
-            
-            const response = await fetch(`/api/clover/merchants/${this.merchantId}/items/${itemId}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + this.token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name: newName,
-                    price: parseInt(newPrice)
-                })
-            });
-            
-            const data = await response.json();
-            this.showMessage(`? Updated: ${data.name}`, 'success');
-            console.log('? Item updated:', data);
-            
-            // Refresh inventory
-            setTimeout(() => this.loadInventory(), 500);
-            
-        } catch (error) {
-            console.error('Failed to edit item:', error);
-            this.showMessage('? Failed to edit item', 'error');
+        // Try to fetch it
+        const fetchedId = await this.fetchMerchantId();
+        if (fetchedId) {
+            this.merchantId = fetchedId;
+            return true;
         }
-    }
 
-    async deleteItem(itemId) {
-        if (!confirm('Are you sure you want to delete this item?')) return;
-        
-        try {
-            this.showMessage('Deleting item...', 'info');
-            
-            const response = await fetch(`/api/clover/merchants/${this.merchantId}/items/${itemId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': 'Bearer ' + this.token
-                }
-            });
-            
-            if (response.ok) {
-                this.showMessage('? Item deleted successfully', 'success');
-                console.log('? Item deleted:', itemId);
-                
-                // Refresh inventory
-                setTimeout(() => this.loadInventory(), 500);
-            } else {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-        } catch (error) {
-            console.error('Failed to delete item:', error);
-            this.showMessage('? Failed to delete item', 'error');
-        }
-    }
-
-    // ============ REAL-TIME MONITORING ============
-    startRealTimeMonitor() {
-        if (this.inventoryMonitor) {
-            clearInterval(this.inventoryMonitor);
-        }
-        
-        this.showMessage('?? Starting real-time inventory monitor...', 'info');
-        
-        this.inventoryMonitor = setInterval(async () => {
-            if (!this.token || !this.merchantId) {
-                this.stopRealTimeMonitor();
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/clover/merchants/${this.merchantId}/items?limit=5`, {
-                    headers: {
-                        'Authorization': 'Bearer ' + this.token
-                    }
-                });
-                
-                const data = await response.json();
-                const itemCount = data.elements ? data.elements.length : 0;
-                
-                // Update monitor display
-                const monitorEl = document.getElementById('liveMonitor');
-                if (monitorEl) {
-                    const now = new Date().toLocaleTimeString();
-                    monitorEl.innerHTML = `
-                        <div class="live-monitor">
-                            <i class="fas fa-sync fa-spin"></i>
-                            <span>Live: ${itemCount} items | Last update: ${now}</span>
-                        </div>
-                    `;
-                }
-                
-                console.log(`?? Real-time monitor: ${itemCount} items at ${new Date().toLocaleTimeString()}`);
-                
-            } catch (error) {
-                console.error('Monitor error:', error);
-            }
-        }, 5000); // Update every 5 seconds
-        
-        this.showMessage('? Real-time monitoring active (updates every 5s)', 'success');
-    }
-
-    stopRealTimeMonitor() {
-        if (this.inventoryMonitor) {
-            clearInterval(this.inventoryMonitor);
-            this.inventoryMonitor = null;
-            
-            const monitorEl = document.getElementById('liveMonitor');
-            if (monitorEl) {
-                monitorEl.innerHTML = '<div class="live-monitor"><i class="fas fa-pause"></i> Monitoring stopped</div>';
-            }
-            
-            this.showMessage('Monitoring stopped', 'info');
-        }
+        console.error('? Cannot proceed without merchant ID');
+        this.showMessage('?? Cannot find merchant - try reconnecting', 'error');
+        return false;
     }
 
     // ============ REAL DATA LOADING ============
     async loadRealCloverData() {
-        if (!this.token || !this.merchantId) return;
-        
+        if (!this.token) return;
+
         try {
             console.log('Loading real Clover data...');
-            
+
+            // Ensure we have merchant ID first
+            const hasMerchantId = await this.ensureMerchantId();
+            if (!hasMerchantId) {
+                console.log('Skipping data load - no merchant ID');
+                return;
+            }
+
             // Get merchant info
             const merchantRes = await fetch(`/api/clover/merchants/${this.merchantId}`, {
                 headers: { 'Authorization': 'Bearer ' + this.token }
             });
-            
+
             if (merchantRes.ok) {
                 const merchantData = await merchantRes.json();
-                console.log('Merchant:', merchantData.name);
-                
+                console.log('Merchant:', merchantData.name || 'Clover Store');
+
                 // Update merchant display
-                const merchantIdDisplay = document.getElementById('merchantIdDisplay');
-                if (merchantIdDisplay) {
-                    merchantIdDisplay.textContent = merchantData.name || this.merchantId.substring(0, 8) + '...';
+                const merchantInfo = document.getElementById('merchantInfo');
+                if (merchantInfo) {
+                    merchantInfo.innerHTML = `
+                        <div class="merchant-details">
+                            <h4><i class="fas fa-store"></i> ${merchantData.name || 'Clover Merchant'}</h4>
+                            <p><i class="fas fa-id-card"></i> ID: ${this.merchantId.substring(0, 8)}...</p>
+                            <p><i class="fas fa-key"></i> Token: ${this.token.substring(0, 10)}...</p>
+                            <button class="action-btn-small" onclick="butterDashboard.testConnection()">
+                                <i class="fas fa-bolt"></i> Test Connection
+                            </button>
+                        </div>
+                    `;
                 }
             }
-            
+
             // Try to get today's orders
             try {
                 const today = new Date();
@@ -552,13 +193,13 @@ class ButterDashboard {
                 const ordersRes = await fetch(`/api/clover/merchants/${this.merchantId}/orders?filter=createdTime>=${startOfDay}&limit=10`, {
                     headers: { 'Authorization': 'Bearer ' + this.token }
                 });
-                
+
                 if (ordersRes.ok) {
                     const ordersData = await ordersRes.json();
-                    
+
                     let totalRevenue = 0;
                     let orderCount = 0;
-                    
+
                     if (ordersData.elements) {
                         ordersData.elements.forEach(order => {
                             if (order.total && order.total > 0) {
@@ -567,45 +208,177 @@ class ButterDashboard {
                             }
                         });
                     }
-                    
-                    // Update dashboard with REAL data
+
+                    // Update dashboard
                     document.getElementById('todayRevenue').textContent = '$' + (totalRevenue / 100).toFixed(2);
                     document.getElementById('totalOrders').textContent = orderCount;
                     document.getElementById('avgOrderValue').textContent = orderCount > 0 ? '$' + ((totalRevenue / orderCount) / 100).toFixed(2) : '$0.00';
-                    
+
                     console.log(`Real data: $${(totalRevenue/100).toFixed(2)} revenue, ${orderCount} orders`);
                 }
             } catch (orderError) {
-                console.log('No order data available (normal for new sandbox)');
+                console.log('No order data available');
             }
-            
+
+            // Start monitoring after data is loaded
+            this.startRealTimeMonitor();
+
         } catch (error) {
             console.error('Error loading real data:', error);
         }
     }
 
-    // ============ UI HELPERS ============
-    showSection(sectionId) {
-        // Hide all sections
-        document.querySelectorAll('.section').forEach(section => {
-            section.style.display = 'none';
-        });
-        
-        // Show requested section
-        const targetSection = document.getElementById(sectionId + 'Section');
-        if (targetSection) {
-            targetSection.style.display = 'block';
+    // ============ CONNECTION TEST ============
+    async testConnection() {
+        console.log('?? Testing connection...');
+
+        if (!this.token) {
+            this.showMessage('? No token found - reconnect to Clover', 'error');
+            return;
         }
-        
-        // Update navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.remove('active');
-            if (item.getAttribute('data-section') === sectionId) {
-                item.classList.add('active');
+
+        const hasMerchantId = await this.ensureMerchantId();
+        if (!hasMerchantId) {
+            this.showMessage('? Cannot find merchant ID', 'error');
+            return;
+        }
+
+        try {
+            // Test 1: GET merchant info
+            const response = await fetch(`/api/clover/merchants/${this.merchantId}`, {
+                headers: { 'Authorization': 'Bearer ' + this.token }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                this.showMessage(`? Connection OK! Merchant: ${data.name || this.merchantId.substring(0, 8)}...`, 'success');
+                console.log('? Connection test passed');
+                return true;
+            } else {
+                this.showMessage(`? Connection failed: ${response.status}`, 'error');
+                return false;
             }
-        });
+
+        } catch (error) {
+            this.showMessage(`? Connection error: ${error.message}`, 'error');
+            return false;
+        }
     }
 
+    // ============ REAL-TIME MONITOR ============
+    startRealTimeMonitor() {
+        if (this.inventoryMonitor) {
+            clearInterval(this.inventoryMonitor);
+        }
+
+        if (!this.token || !this.merchantId) {
+            console.warn('Cannot start monitor - missing token or merchant ID');
+            return;
+        }
+
+        console.log('Starting real-time monitor...');
+
+        this.inventoryMonitor = setInterval(async () => {
+            if (!this.token || !this.merchantId) {
+                this.stopRealTimeMonitor();
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/clover/merchants/${this.merchantId}/items?limit=5`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + this.token
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const itemCount = data.elements ? data.elements.length : 0;
+                    const now = new Date().toLocaleTimeString();
+
+                    // Update monitor display if it exists
+                    const monitorEl = document.getElementById('liveMonitor');
+                    if (monitorEl) {
+                        monitorEl.innerHTML = `
+                            <div style="background:#2c3e50;color:white;padding:8px;border-radius:4px;font-size:12px;">
+                                <i class="fas fa-sync fa-spin"></i>
+                                Live: ${itemCount} items | ${now}
+                            </div>
+                        `;
+                    }
+
+                    console.log(`?? Real-time monitor: ${itemCount} items at ${now}`);
+                }
+            } catch (error) {
+                console.error('Monitor error:', error.message);
+            }
+        }, 5000); // Every 5 seconds
+
+        this.showMessage('? Real-time monitoring started', 'info');
+    }
+
+    stopRealTimeMonitor() {
+        if (this.inventoryMonitor) {
+            clearInterval(this.inventoryMonitor);
+            this.inventoryMonitor = null;
+            console.log('Monitoring stopped');
+        }
+    }
+
+    // ============ INVENTORY MANAGEMENT ============
+    async createTestItem() {
+        if (!this.token) {
+            this.showMessage('? Not connected to Clover', 'error');
+            return;
+        }
+
+        const hasMerchantId = await this.ensureMerchantId();
+        if (!hasMerchantId) {
+            this.showMessage('? Cannot find merchant', 'error');
+            return;
+        }
+
+        const testItem = {
+            name: `Test Item ${new Date().toLocaleTimeString()}`,
+            price: 999, // $9.99
+            sku: `TEST-${Date.now()}`
+        };
+
+        console.log('Creating item:', testItem);
+
+        try {
+            const response = await fetch(`/api/clover/merchants/${this.merchantId}/items`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + this.token,
+                    'Content-Type': 'application/json',
+                    'accept': 'application/json'
+                },
+                body: JSON.stringify(testItem)
+            });
+
+            const responseText = await response.text();
+            console.log('Response:', responseText);
+
+            if (response.ok) {
+                const data = JSON.parse(responseText);
+                this.showMessage(`? Created: ${data.name}`, 'success');
+                console.log('? Item created:', data);
+                return data;
+            } else {
+                this.showMessage(`? Failed: ${response.status}`, 'error');
+                console.error('Item creation failed:', responseText);
+                return null;
+            }
+
+        } catch (error) {
+            this.showMessage(`? Error: ${error.message}`, 'error');
+            console.error('Network error:', error);
+            return null;
+        }
+    }
+
+    // ============ UI HELPERS ============
     showMessage(text, type = 'info') {
         // Create toast notification
         const toast = document.createElement('div');
@@ -614,10 +387,10 @@ class ButterDashboard {
             <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
             <span>${text}</span>
         `;
-        
+
         document.body.appendChild(toast);
-        
-        // Add styles if not already added
+
+        // Add styles if needed
         if (!document.querySelector('#toast-styles')) {
             const style = document.createElement('style');
             style.id = 'toast-styles';
@@ -652,66 +425,12 @@ class ButterDashboard {
                     border-radius: 6px;
                     border: none;
                     cursor: pointer;
-                    font-size: 14px;
-                    margin: 5px;
-                }
-                .btn-small {
-                    padding: 6px 12px;
-                    background: #3498db;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    margin: 2px;
-                    font-size: 12px;
-                }
-                .btn-danger {
-                    background: #e74c3c;
-                }
-                .empty-state {
-                    padding: 40px;
-                    text-align: center;
-                    color: #7f8c8d;
-                    font-size: 16px;
-                }
-                .live-monitor {
-                    background: #2c3e50;
-                    color: white;
-                    padding: 10px;
-                    border-radius: 4px;
-                    font-size: 12px;
                     margin-top: 10px;
-                }
-                .inventory-table {
-                    margin-top: 20px;
-                    overflow-x: auto;
-                }
-                .inventory-table table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    background: white;
-                    border-radius: 8px;
-                    overflow: hidden;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-                }
-                .inventory-table th {
-                    background: #f8f9fa;
-                    padding: 12px;
-                    text-align: left;
-                    font-weight: 600;
-                    border-bottom: 2px solid #eee;
-                }
-                .inventory-table td {
-                    padding: 12px;
-                    border-bottom: 1px solid #eee;
-                }
-                .inventory-table tr:hover {
-                    background: #f9f9f9;
                 }
             `;
             document.head.appendChild(style);
         }
-        
+
         // Remove after 4 seconds
         setTimeout(() => {
             toast.style.animation = 'slideOut 0.3s ease';
@@ -720,10 +439,10 @@ class ButterDashboard {
     }
 }
 
-// Make it globally available
+// Make globally available
 window.butterDashboard = null;
 
-// Start when page loads
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     window.butterDashboard = new ButterDashboard();
 });
