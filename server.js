@@ -167,6 +167,7 @@ app.get("/api/clover/merchants/:id", async (req, res) => {
 // ========== ITEMS AND ORDERS ROUTES ==========
 
 // Get merchant items
+// Get merchant items
 app.get("/api/clover/merchants/:id/items", async (req, res) => {
     try {
         const authHeader = req.headers.authorization;
@@ -178,7 +179,11 @@ app.get("/api/clover/merchants/:id/items", async (req, res) => {
         const merchantId = req.params.id;
         const query = req.url.split("?")[1] || "";
         
-        const url = `https://apisandbox.dev.clover.com/v3/merchants/${merchantId}/items${query ? "?" + query : ""}`;
+        // SIMPLE STRING - NO TEMPLATE LITERALS
+        let url = "https://apisandbox.dev.clover.com/v3/merchants/" + merchantId + "/items";
+        if (query) {
+            url = url + "?" + query;
+        }
         
         const response = await fetch(url, {
             headers: {
@@ -186,6 +191,15 @@ app.get("/api/clover/merchants/:id/items", async (req, res) => {
                 "Content-Type": "application/json"
             }
         });
+        
+        const data = await response.json();
+        res.status(response.status).json(data);
+        
+    } catch (error) {
+        console.error("Items API error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
         
         const data = await response.json();
         res.status(response.status).json(data);
@@ -229,6 +243,7 @@ app.get("/api/clover/merchants/:id/orders", async (req, res) => {
 // ========== ITEMS AND ORDERS API ROUTES ==========
 
 // Get merchant items
+// Get merchant items
 app.get("/api/clover/merchants/:id/items", async (req, res) => {
     try {
         const authHeader = req.headers.authorization;
@@ -240,7 +255,7 @@ app.get("/api/clover/merchants/:id/items", async (req, res) => {
         const merchantId = req.params.id;
         const query = req.url.split("?")[1] || "";
         
-        // SIMPLE STRING CONCATENATION - NO TEMPLATE LITERALS
+        // SIMPLE STRING - NO TEMPLATE LITERALS
         let url = "https://apisandbox.dev.clover.com/v3/merchants/" + merchantId + "/items";
         if (query) {
             url = url + "?" + query;
@@ -252,6 +267,15 @@ app.get("/api/clover/merchants/:id/items", async (req, res) => {
                 "Content-Type": "application/json"
             }
         });
+        
+        const data = await response.json();
+        res.status(response.status).json(data);
+        
+    } catch (error) {
+        console.error("Items API error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
         
         const data = await response.json();
         res.status(response.status).json(data);
@@ -302,6 +326,7 @@ app\.listen\(PORT, () => {
     console.log("📌 Callback: /oauth/success");
     console.log("📌 API: /api/clover/*");
 });
+
 
 
 
