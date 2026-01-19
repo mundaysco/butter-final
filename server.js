@@ -226,12 +226,13 @@ app.get("/api/clover/merchants/:id/orders", async (req, res) => {
     }
 });
 
-app\.listen\(PORT, () => {
+app.listen(PORT, () => {
     console.log("✅ BUTTER SERVER RUNNING on port " + PORT);
     console.log("📌 OAuth: /api/oauth/start");
     console.log("📌 Callback: /oauth/success");
     console.log("📌 API: /api/clover/*");
 });
+
 
 
 
