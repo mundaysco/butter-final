@@ -68,29 +68,75 @@ app.get('/api/clover/merchants/:id', async (req, res) => {
 // ========== CLOVER OAUTH ENDPOINTS ==========
 
 // OAuth Success Callback - SIMPLIFIED VERSION
+// OAuth Success Endpoint - COMPLETE FIX
 app.get('/oauth/success', async (req, res) => {
     try {
         const { code, merchant_id } = req.query;
         
         console.log('=== OAuth Callback ===');
-        console.log('Code:', code ? 'Yes' : 'No');
+        console.log('Code received:', !!code);
         
         if (!code) {
-            return res.status(400).send('No authorization code');
+            return res.status(400).send('<h2>Error: No authorization code</h2>');
         }
         
-        // Exchange code for API token
+        // CRITICAL: Exchange code for API token
         const tokenResponse = await fetch('https://apisandbox.dev.clover.com/oauth/token', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify({
                 client_id: 'JD06DKTZ0E7MT',
-                client_secret: process.env.CLOVER_CLIENT_SECRET,
+                client_secret: process.env.CLOVER_CLIENT_SECRET, // MUST BE SET IN RENDER!
                 code: code,
                 grant_type: 'authorization_code',
                 redirect_uri: 'https://butter-final.onrender.com/oauth/success'
             })
         });
+        
+        const tokenData = await tokenResponse.json();
+        console.log('Token exchange response:', tokenData);
+        
+        // Check if we got a REAL API access token
+        if (!tokenData.access_token) {
+            console.error('Token exchange failed:', tokenData);
+            return res.send('<h2>Error: Could not get API token</h2><pre>' + JSON.stringify(tokenData, null, 2) + '</pre>');
+        }
+        
+        // Use merchant_id from query, token, or fallback
+        const finalMerchantId = merchant_id || tokenData.merchant_id || 'Q82R0D2NSRR81';
+        
+        // Return page that stores the REAL API token
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Connected to Clover</title>
+    <script>
+        // Store the REAL API access token (not auth token)
+        localStorage.setItem('clover_access_token', '${tokenData.access_token}');
+        localStorage.setItem('clover_merchant_id', '${finalMerchantId}');
+        
+        console.log('✅ OAuth Successful!');
+        console.log('API Token stored:', '${tokenData.access_token.substring(0, 20)}...');
+        console.log('Merchant ID:', '${finalMerchantId}');
+        
+        window.location.href = '/';
+    </script>
+</head>
+<body>
+    <h2>Connected to Clover!</h2>
+    <p>Storing API credentials and redirecting...</p>
+</body>
+</html>`;
+        
+        res.send(html);
+        
+    } catch (error) {
+        console.error('OAuth Error:', error);
+        res.send('<h2>OAuth Error</h2><p>' + error.message + '</p>');
+    }
+});
         
         const tokenData = await tokenResponse.json();
         console.log('Token exchange:', tokenData);
@@ -218,6 +264,7 @@ app.get('/api/oauth/start', (req, res) => {
 app\.listen\(PORT, () => {
     console.log('BUTTER SERVER RUNNING on port', PORT);
 });
+
 
 
 
