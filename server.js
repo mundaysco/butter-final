@@ -178,7 +178,7 @@ app.get("/api/clover/merchants/:id/items", async (req, res) => {
         const merchantId = req.params.id;
         const query = req.url.split("?")[1] || "";
         
-        const url = `https://apisandbox.dev.clover.com/v3/merchants/\${merchantId}/items\${query ? "?" + query : ""}`;
+        const url = `https://apisandbox.dev.clover.com/v3/merchants/${merchantId}/items${query ? "?" + query : ""}`;
         
         const response = await fetch(url, {
             headers: {
@@ -208,7 +208,7 @@ app.get("/api/clover/merchants/:id/orders", async (req, res) => {
         const merchantId = req.params.id;
         const query = req.url.split("?")[1] || "";
         
-        const url = `https://apisandbox.dev.clover.com/v3/merchants/\${merchantId}/orders\${query ? "?" + query : ""}`;
+        const url = `https://apisandbox.dev.clover.com/v3/merchants/${merchantId}/orders${query ? "?" + query : ""}`;
         
         const response = await fetch(url, {
             headers: {
@@ -232,6 +232,7 @@ app.listen(PORT, () => {
     console.log("📌 Callback: /oauth/success");
     console.log("📌 API: /api/clover/*");
 });
+
 
 
 
