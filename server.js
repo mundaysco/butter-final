@@ -72,26 +72,59 @@ app.get('/oauth/success', async (req, res) => {
     try {
         const { code, merchant_id } = req.query;
         
-        console.log('OAuth callback received');
+        console.log('=== OAuth Callback ===');
         console.log('Code:', code ? 'Yes' : 'No');
         
         if (!code) {
-            return res.send('<h2>Error: No authorization code</h2>');
+            return res.status(400).send('No authorization code');
         }
         
-        // Exchange code for token
+        // Exchange code for API token
         const tokenResponse = await fetch('https://apisandbox.dev.clover.com/oauth/token', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 client_id: 'JD06DKTZ0E7MT',
                 client_secret: process.env.CLOVER_CLIENT_SECRET,
                 code: code,
+                grant_type: 'authorization_code',
                 redirect_uri: 'https://butter-final.onrender.com/oauth/success'
             })
         });
+        
+        const tokenData = await tokenResponse.json();
+        console.log('Token exchange:', tokenData);
+        
+        if (!tokenData.access_token) {
+            throw new Error('No API token: ' + JSON.stringify(tokenData));
+        }
+        
+        // Get merchant ID
+        let finalMerchantId = merchant_id || tokenData.merchant_id || 'Q82R0D2NSRR81';
+        
+        // Store API token (not auth token)
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Connected</title>
+    <script>
+        localStorage.setItem('clover_access_token', '${tokenData.access_token}');
+        localStorage.setItem('clover_merchant_id', '${finalMerchantId}');
+        window.location.href = '/';
+    </script>
+</head>
+<body>
+    <h2>Connected! Redirecting...</h2>
+</body>
+</html>`;
+        
+        res.send(html);
+        
+    } catch (error) {
+        console.error('OAuth Error:', error);
+        res.send('<h2>Connection failed</h2><p>' + error.message + '</p>');
+    }
+});
         
         const tokenData = await tokenResponse.json();
         console.log('Token response:', tokenData);
@@ -185,6 +218,7 @@ app.get('/api/oauth/start', (req, res) => {
 app\.listen\(PORT, () => {
     console.log('BUTTER SERVER RUNNING on port', PORT);
 });
+
 
 
 
