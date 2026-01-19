@@ -1,5 +1,5 @@
 // ============================================
-// BUTTER CLOVER OAUTH - CLEAN WORKING VERSION
+// BUTTER CLOVER OAUTH - FIXED FOR SANDBOX
 // ============================================
 
 const express = require("express");
@@ -7,9 +7,13 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Your Clover App Credentials
-const CLIENT_ID = "JD06DKTZ0E7MT";
-const CLIENT_SECRET = "fd9a48ba-4357-c812-9558-62c27b182680";
+// Your Clover App Credentials - USE ENVIRONMENT VARIABLES
+const CLIENT_ID = process.env.CLOVER_CLIENT_ID || "";
+const CLIENT_SECRET = process.env.CLOVER_CLIENT_SECRET || "";
+
+// SANDBOX URLs (for testing)
+const CLOVER_AUTH_URL = "https://api-sandbox.dev.clover.com/oauth/v2/authorize";
+const CLOVER_TOKEN_URL = "https://api-sandbox.dev.clover.com/oauth/v2/token";
 
 // ============ HOME PAGE ============
 app.get("/", (req, res) => {
@@ -18,30 +22,35 @@ app.get("/", (req, res) => {
     const baseUrl = `${protocol}://${host}`;
     const callbackUrl = `${baseUrl}/callback`;
     const encodedCallback = encodeURIComponent(callbackUrl);
-    
-    const authUrl = `https://www.clover.com/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodedCallback}&response_type=code&state=butter_${Date.now()}`;
-    
+
+    const authUrl = `${CLOVER_AUTH_URL}?client_id=${CLIENT_ID}&redirect_uri=${encodedCallback}&response_type=code&state=butter_${Date.now()}`;
+
     res.send(`
         <!DOCTYPE html>
         <html>
         <head>
-            <title>🧈 Butter - Clover Integration</title>
+            <title>?? Butter - Clover Integration</title>
             <style>
                 body { font-family: Arial; padding: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; }
-                .container { max-width: 800px; margin: 0 auto; background: rgba(255,255,255,0.95); padding: 40px; border-radius: 20px; color: #333; }
-                h1 { color: #00A859; }
-                .btn { background: #00A859; color: white; padding: 15px 30px; text-decoration: none; border-radius: 10px; display: inline-block; margin: 20px; }
+                .container { max-width: 800px; margin: 0 auto; background: rgba(255,255,255,0.1); padding: 40px; border-radius: 20px; }
+                .btn { display: inline-block; background: white; color: #764ba2; padding: 15px 30px; margin: 10px; border-radius: 10px; text-decoration: none; font-weight: bold; }
+                code { background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 5px; }
             </style>
         </head>
         <body>
             <div class="container">
-                <h1>✅ Butter v3.0 - Ready</h1>
-                <p>Professional Clover OAuth Dashboard</p>
+                <h1>?? Butter Clover Integration</h1>
                 <p><strong>Status:</strong> Server running on port ${PORT}</p>
                 <p><strong>Callback URL:</strong> ${callbackUrl}</p>
                 <a href="${authUrl}" class="btn" target="_blank">Start Clover OAuth</a>
                 <a href="/callback?code=TEST123" class="btn">Test Callback</a>
-                <a href="/health" class="btn">Health Check</a>
+                <hr>
+                <h3>Setup Instructions:</h3>
+                <p>1. In Clover Sandbox App Settings, set:</p>
+                <p><code>Redirect URI: ${callbackUrl}</code></p>
+                <p>2. Click "Start Clover OAuth" above</p>
+                <p>3. Complete OAuth in popup window</p>
+                <p>4. Check console for access token</p>
             </div>
         </body>
         </html>
@@ -50,87 +59,99 @@ app.get("/", (req, res) => {
 
 // ============ OAUTH CALLBACK ============
 app.get("/callback", async (req, res) => {
-    const code = req.query.code;
-    const state = req.query.state;
-    const error = req.query.error;
-
-    console.log("[OAUTH] Callback received - Code:", code, "State:", state, "Error:", error);
-
+    const { code, state, error } = req.query;
+    
     if (error) {
-        return res.status(400).send(`
-            <!DOCTYPE html>
-            <html>
-            <head><title>OAuth Error</title></head>
-            <body style="font-family: Arial; padding: 40px;">
-                <h1 style="color: red;">❌ OAuth Error: ${error}</h1>
-                <p>The authorization was denied.</p>
-                <a href="/">← Back to Butter</a>
-            </body>
-            </html>
-        `);
+        return res.send(`<h1>? OAuth Error: ${error}</h1>`);
     }
 
     if (!code) {
-        return res.status(400).send(`
+        return res.send(`
             <!DOCTYPE html>
             <html>
-            <head><title>No Code</title></head>
-            <body style="font-family: Arial; padding: 40px;">
-                <h1 style="color: orange;">⚠️ No Authorization Code</h1>
-                <p>No code was provided in the callback.</p>
-                <a href="/">← Back to Butter</a>
+            <head>
+                <title>No Authorization Code</title>
+                <style>
+                    body { font-family: Arial; padding: 40px; text-align: center; }
+                    h1 { color: orange; }
+                </style>
+            </head>
+            <body>
+                <h1>?? No Authorization Code Received</h1>
+                <p>Try the OAuth flow again.</p>
+                <a href="/">Go Back</a>
             </body>
             </html>
         `);
     }
 
+    // Exchange code for token
     try {
-        // Exchange code for access token
-        const tokenResponse = await axios.post("https://apisandbox.dev.clover.com/oauth/token", null, {
-            params: {
-                client_id: CLIENT_ID,
-                client_secret: CLIENT_SECRET,
-                code: code
-            }
+        const host = req.get("host");
+        const protocol = req.protocol;
+        const baseUrl = `${protocol}://${host}`;
+        const redirectUri = `${baseUrl}/callback`;
+
+        const tokenResponse = await axios.post(CLOVER_TOKEN_URL, new URLSearchParams({
+            client_id: CLIENT_ID,
+            client_secret: CLIENT_SECRET,
+            code: code,
+            redirect_uri: redirectUri,
+            grant_type: "authorization_code"
+        }), {
+            headers: { "Content-Type": "application/x-www-form-urlencoded" }
         });
 
-        const accessToken = tokenResponse.data.access_token;
-        
-        // SUCCESS
+        const { access_token, merchant_id, employee_id } = tokenResponse.data;
+
+        // SUCCESS - Show token info
         res.send(`
             <!DOCTYPE html>
             <html>
             <head>
-                <title>✅ OAuth Success!</title>
+                <title>? OAuth Success!</title>
                 <style>
-                    body { font-family: Arial; padding: 40px; text-align: center; }
-                    .success { color: green; font-size: 2rem; }
-                    .token { background: #f5f5f5; padding: 20px; margin: 20px auto; max-width: 600px; border-radius: 5px; word-break: break-all; }
+                    body { font-family: Arial; padding: 40px; background: #f0fff0; }
+                    .success { color: green; }
+                    .token { background: #e0ffe0; padding: 20px; border-radius: 10px; margin: 20px 0; word-break: break-all; }
                 </style>
             </head>
             <body>
-                <h1 class="success">✅ OAuth Successful!</h1>
-                <p>Authorization code received and exchanged for token.</p>
+                <h1 class="success">? Clover OAuth Successful!</h1>
+                <p><strong>Merchant ID:</strong> ${merchant_id}</p>
+                <p><strong>Employee ID:</strong> ${employee_id}</p>
                 <div class="token">
                     <strong>Access Token:</strong><br>
-                    ${accessToken}
+                    <code>${access_token}</code>
                 </div>
-                <p><a href="/">← Back to Butter</a></p>
+                <p><a href="/">Back to Home</a></p>
+                <script>
+                    // Log to console for debugging
+                    console.log("OAuth Success:", ${JSON.stringify(tokenResponse.data)});
+                </script>
             </body>
             </html>
         `);
 
+        // Also log to server console
+        console.log("? OAuth Success!");
+        console.log("Merchant ID:", merchant_id);
+        console.log("Access Token (first 10 chars):", access_token.substring(0, 10) + "...");
+
     } catch (error) {
-        console.error("Token exchange error:", error.message);
+        console.error("? Token exchange error:", error.response?.data || error.message);
         
-        res.status(500).send(`
+        res.send(`
             <!DOCTYPE html>
             <html>
-            <head><title>Token Error</title></head>
-            <body style="font-family: Arial; padding: 40px;">
-                <h1 style="color: red;">❌ Token Exchange Failed</h1>
-                <p>Error: ${error.message}</p>
-                <a href="/">← Back to Butter</a>
+            <head>
+                <title>? Token Exchange Failed</title>
+                <style>body { font-family: Arial; padding: 40px; background: #fff0f0; }</style>
+            </head>
+            <body>
+                <h1 style="color: red;">? Failed to Get Access Token</h1>
+                <p><strong>Error:</strong> ${error.response?.data?.error || error.message}</p>
+                <p><a href="/">Try Again</a></p>
             </body>
             </html>
         `);
@@ -139,32 +160,27 @@ app.get("/callback", async (req, res) => {
 
 // ============ HEALTH CHECK ============
 app.get("/health", (req, res) => {
-    res.json({
-        status: "healthy",
-        service: "butter-clover-oauth",
-        version: "3.0.0",
-        timestamp: new Date().toISOString(),
-        client_id: CLIENT_ID,
-        endpoints: {
-            home: "/",
-            callback: "/callback",
-            health: "/health"
-        }
+    res.json({ 
+        status: "healthy", 
+        port: PORT,
+        environment: process.env.NODE_ENV || "development",
+        client_id_set: !!CLIENT_ID,
+        client_secret_set: !!CLIENT_SECRET
     });
 });
 
 // ============ START SERVER ============
 app.listen(PORT, () => {
     console.log(`
-🧈 BUTTER CLOVER OAUTH SERVER
+?? BUTTER CLOVER OAUTH SERVER
 =============================
-✅ Server started on port: ${PORT}
-✅ Homepage: http://localhost:${PORT}
-✅ Callback: http://localhost:${PORT}/callback
-✅ Health: http://localhost:${PORT}/health
-✅ Ready for Clover OAuth!
+? Server started on port: ${PORT}
+? Homepage: http://localhost:${PORT}
+? Callback: http://localhost:${PORT}/callback
+? Health: http://localhost:${PORT}/health
+? Ready for Clover OAuth!
 
-🎯 Update Clover with:
+?? Update Clover Sandbox App with:
 Site URL: http://localhost:${PORT}
 Redirect URI: http://localhost:${PORT}/callback
     `);

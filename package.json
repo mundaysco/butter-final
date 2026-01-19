@@ -1,11 +1,12 @@
-﻿{
-  "name": "butter-final",
+{
+  "name": "butter",
   "version": "1.0.0",
-  "main": "simple-server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node simple-server.js"
+    "start": "node server.js"
   },
-  "engines": {
-    "node": ">=18"
+  "dependencies": {
+    "express": "^4.18.0",
+    "axios": "^1.6.0"
   }
 }
