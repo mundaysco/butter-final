@@ -168,7 +168,7 @@ app.get('/healthz', (req, res) => {
 });
 
 // Start server
-\// OAuth Start Endpoint - Redirects to Clover for authorization
+// OAuth Start Endpoint - Redirects to Clover for authorization
 app.get('/api/oauth/start', (req, res) => {
     const clientId = 'JD06DKTZ0E7MT';
     const redirectUri = encodeURIComponent('https://butter-final.onrender.com/oauth/success');
@@ -184,5 +184,6 @@ app.get('/api/oauth/start', (req, res) => {
 app\.listen\(PORT, () => {
     console.log('BUTTER SERVER RUNNING on port', PORT);
 });
+
 
 
