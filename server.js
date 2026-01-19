@@ -54,7 +54,7 @@ app.get("/api/oauth/start", (req, res) => {
 
     const authUrl = `${CLOVER_AUTH_URL}?client_id=${CLIENT_ID}&redirect_uri=${encodedCallback}&response_type=code&state=butter_${Date.now()}`;
     
-    res.json({ success: true, auth_url: authUrl });
+    res.redirect(authUrl);
 });
 
 // OAuth Callback
@@ -175,3 +175,4 @@ app.listen(PORT, () => {
 ? API Proxy: /api/clover/*
     `);
 });
+
