@@ -13,7 +13,7 @@ const CLIENT_SECRET = process.env.CLOVER_CLIENT_SECRET;
 
 // CORRECT SANDBOX URLs
 const CLOVER_AUTH_URL = "https://sandbox.dev.clover.com/oauth/v2/authorize";
-const CLOVER_TOKEN_URL = "https://sandbox.dev.clover.com/oauth/v2/token";
+const CLOVER_TOKEN_URL = "https://sandbox.dev.clover.com/auth-token/oauth/v2/token";
 
 console.log("? Server starting...");
 console.log("?? Auth URL:", CLOVER_AUTH_URL);
