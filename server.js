@@ -1,4 +1,4 @@
-// ============================================
+﻿// ============================================
 // BUTTER CLOVER OAUTH + DASHBOARD UI - COMPLETE
 // ============================================
 
@@ -164,6 +164,115 @@ async function handleOAuthCallback(req, res) {
 }
 
 // ============ START SERVER ============
+// ========== CLOVER OAuth ENDPOINTS ==========
+
+// OAuth Success Callback Handler
+app.get('/oauth/success', async (req, res) => {
+    try {
+        const { code, merchant_id } = req.query;
+        
+        console.log('=== OAuth Callback Received ===');
+        console.log('Code:', code ? '✓' : '✗');
+        console.log('Merchant ID:', merchant_id || 'Not provided');
+        
+        if (!code) {
+            return res.status(400).send('No authorization code received');
+        }
+        
+        // 1. Exchange code for access token
+        const tokenResponse = await fetch('https://apisandbox.dev.clover.com/oauth/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                client_id: 'JD06DKTZ0E7MT',
+                client_secret: process.env.CLOVER_CLIENT_SECRET,
+                code: code,
+                redirect_uri: 'https://butter-final.onrender.com/oauth/success'
+            })
+        });
+        
+        const tokenData = await tokenResponse.json();
+        console.log('Token exchange result:', tokenData);
+        
+        if (!tokenData.access_token) {
+            throw new Error('No access token in response: ' + JSON.stringify(tokenData));
+        }
+        
+        // 2. Return HTML that stores tokens and redirects
+        const html = \
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Connection Successful</title>
+            <script>
+                // Store the access token in localStorage
+                localStorage.setItem('clover_access_token', '\');
+                
+                // Store merchant ID (from query or fallback)
+                const merchantId = '\';
+                localStorage.setItem('clover_merchant_id', merchantId);
+                
+                console.log('✅ OAuth Successful!');
+                console.log('- Token stored:', '\...');
+                console.log('- Merchant ID:', merchantId);
+                
+                // Redirect to main app
+                window.location.href = '/';
+            </script>
+        </head>
+        <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+            <h2>✓ Connected to Clover!</h2>
+            <p>Storing credentials and redirecting to your app...</p>
+            <p>If nothing happens, <a href="/">click here</a>.</p>
+        </body>
+        </html>
+        \;
+        
+        res.send(html);
+        
+    } catch (error) {
+        console.error('OAuth Error:', error);
+        res.status(500).send(\
+            <h2>Connection Failed</h2>
+            <p>Error: \</p>
+            <p>Check server logs for details.</p>
+            <a href="/">Return to app</a>
+        \);
+    }
+});
+
+// API endpoint for token exchange
+app.post('/api/clover/token', express.json(), async (req, res) => {
+    try {
+        const { code } = req.body;
+        
+        if (!code) {
+            return res.status(400).json({ error: 'No code provided' });
+        }
+        
+        const response = await fetch('https://apisandbox.dev.clover.com/oauth/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                client_id: 'JD06DKTZ0E7MT',
+                client_secret: process.env.CLOVER_CLIENT_SECRET,
+                code: code,
+                redirect_uri: 'https://butter-final.onrender.com/oauth/success'
+            })
+        });
+        
+        const data = await response.json();
+        res.json(data);
+        
+    } catch (error) {
+        console.error('Token endpoint error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 app.listen(PORT, () => {
     console.log(`
 ?? BUTTER SERVER RUNNING
@@ -175,5 +284,6 @@ app.listen(PORT, () => {
 ? API Proxy: /api/clover/*
     `);
 });
+
 
 
