@@ -201,7 +201,7 @@ app.get('/oauth/success', async (req, res) => {
         }
         
         // 2. Return HTML that stores tokens and redirects
-        const html = \
+        const html = `
         <!DOCTYPE html>
         <html>
         <head>
