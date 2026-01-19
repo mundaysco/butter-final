@@ -79,3 +79,4 @@ class ButterDashboard {
 document.addEventListener('DOMContentLoaded', () => {
     new ButterDashboard();
 });
+
