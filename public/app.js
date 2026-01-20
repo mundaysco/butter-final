@@ -32,10 +32,10 @@ class ButterDashboard {
         const statusEl = document.getElementById('authStatus');
         if (statusEl) {
             if (this.token) {
-                statusEl.innerHTML = '<span class="status-dot"></span><span>? Connected to Clover</span>';
+                statusEl.innerHTML = '<span class="status-dot"></span><span>✅ Connected to Clover</span>';
                 statusEl.classList.add('connected');
             } else {
-                statusEl.innerHTML = '<span class="status-dot"></span><span>?? Not connected</span>';
+                statusEl.innerHTML = '<span class="status-dot"></span><span>❌ Not connected</span>';
             }
         }
     }
@@ -63,11 +63,11 @@ class ButterDashboard {
     // ============ MERCHANT ID AUTO-FETCH ============
     async fetchMerchantId() {
         if (!this.token) {
-            console.error('? No token available');
+            console.error('❌ No token available');
             return null;
         }
 
-        console.log('?? Fetching merchant ID from Clover API...');
+        console.log('🔍 Fetching merchant ID from Clover API...');
         
         try {
             // Try endpoint for current merchant
@@ -94,7 +94,7 @@ class ButterDashboard {
                 }
 
                 if (merchantId) {
-                    console.log('? Found merchant ID:', merchantId);
+                    console.log('✅ Found merchant ID:', merchantId);
                     localStorage.setItem('clover_merchant_id', merchantId);
                     this.merchantId = merchantId;
                     return merchantId;
@@ -113,18 +113,18 @@ class ButterDashboard {
                 const listData = await listResponse.json();
                 if (listData.elements && listData.elements[0] && listData.elements[0].id) {
                     const merchantId = listData.elements[0].id;
-                    console.log('? Found merchant ID from list:', merchantId);
+                    console.log('✅ Found merchant ID from list:', merchantId);
                     localStorage.setItem('clover_merchant_id', merchantId);
                     this.merchantId = merchantId;
                     return merchantId;
                 }
             }
 
-            console.warn('?? Could not find merchant ID in API response');
+            console.warn('⚠️ Could not find merchant ID in API response');
             return null;
 
         } catch (error) {
-            console.error('? Failed to fetch merchant ID:', error);
+            console.error('❌ Failed to fetch merchant ID:', error);
             return null;
         }
     }
@@ -142,8 +142,8 @@ class ButterDashboard {
             return true;
         }
 
-        console.error('? Cannot proceed without merchant ID');
-        this.showMessage('?? Cannot find merchant - try reconnecting', 'error');
+        console.error('❌ Cannot proceed without merchant ID');
+        this.showMessage('❌ Cannot find merchant - try reconnecting', 'error');
         return false;
     }
 
@@ -220,8 +220,9 @@ class ButterDashboard {
                 console.log('No order data available');
             }
 
-            // Start monitoring after data is loaded
-            this.startRealTimeMonitor();
+            // Start monitoring after data is loaded - DISABLED
+            // this.startRealTimeMonitor(); // Clover tokens expire too quickly
+            console.log('⚠️ Real-time monitor disabled - Clover sandbox tokens expire too fast');
 
         } catch (error) {
             console.error('Error loading real data:', error);
@@ -230,16 +231,16 @@ class ButterDashboard {
 
     // ============ CONNECTION TEST ============
     async testConnection() {
-        console.log('?? Testing connection...');
+        console.log('🔌 Testing connection...');
 
         if (!this.token) {
-            this.showMessage('? No token found - reconnect to Clover', 'error');
+            this.showMessage('❌ No token found - reconnect to Clover', 'error');
             return;
         }
 
         const hasMerchantId = await this.ensureMerchantId();
         if (!hasMerchantId) {
-            this.showMessage('? Cannot find merchant ID', 'error');
+            this.showMessage('❌ Cannot find merchant ID', 'error');
             return;
         }
 
@@ -251,22 +252,41 @@ class ButterDashboard {
 
             if (response.ok) {
                 const data = await response.json();
-                this.showMessage(`? Connection OK! Merchant: ${data.name || this.merchantId.substring(0, 8)}...`, 'success');
-                console.log('? Connection test passed');
+                this.showMessage(`✅ Connection OK! Merchant: ${data.name || this.merchantId.substring(0, 8)}...`, 'success');
+                console.log('✅ Connection test passed');
                 return true;
             } else {
-                this.showMessage(`? Connection failed: ${response.status}`, 'error');
+                this.showMessage(`❌ Connection failed: ${response.status}`, 'error');
                 return false;
             }
 
         } catch (error) {
-            this.showMessage(`? Connection error: ${error.message}`, 'error');
+            this.showMessage(`❌ Connection error: ${error.message}`, 'error');
             return false;
         }
     }
 
     // ============ REAL-TIME MONITOR ============
     startRealTimeMonitor() {
+        console.log('⚠️ Real-time monitor DISABLED');
+        console.log('ℹ️ Clover sandbox tokens expire too quickly for real-time monitoring');
+        console.log('ℹ️ Use the Test Connection button for on-demand checks');
+        
+        // Display a static monitor status instead
+        const monitorEl = document.getElementById('liveMonitor');
+        if (monitorEl) {
+            monitorEl.innerHTML = `
+                <div style="background:#34495e;color:white;padding:8px;border-radius:4px;font-size:12px;">
+                    <i class="fas fa-info-circle"></i>
+                    Real-time: DISABLED | Clover sandbox tokens expire too quickly
+                </div>
+            `;
+        }
+        
+        return; // Completely disabled - no interval
+        
+        /*
+        // OLD CODE - COMMENTED OUT (would cause 401 errors)
         if (this.inventoryMonitor) {
             clearInterval(this.inventoryMonitor);
         }
@@ -307,14 +327,15 @@ class ButterDashboard {
                         `;
                     }
 
-                    console.log(`?? Real-time monitor: ${itemCount} items at ${now}`);
+                    console.log(`🔄 Real-time monitor: ${itemCount} items at ${now}`);
                 }
             } catch (error) {
                 console.error('Monitor error:', error.message);
             }
         }, 5000); // Every 5 seconds
 
-        this.showMessage('? Real-time monitoring started', 'info');
+        this.showMessage('🔔 Real-time monitoring started', 'info');
+        */
     }
 
     stopRealTimeMonitor() {
@@ -328,13 +349,13 @@ class ButterDashboard {
     // ============ INVENTORY MANAGEMENT ============
     async createTestItem() {
         if (!this.token) {
-            this.showMessage('? Not connected to Clover', 'error');
+            this.showMessage('❌ Not connected to Clover', 'error');
             return;
         }
 
         const hasMerchantId = await this.ensureMerchantId();
         if (!hasMerchantId) {
-            this.showMessage('? Cannot find merchant', 'error');
+            this.showMessage('❌ Cannot find merchant', 'error');
             return;
         }
 
@@ -362,17 +383,17 @@ class ButterDashboard {
 
             if (response.ok) {
                 const data = JSON.parse(responseText);
-                this.showMessage(`? Created: ${data.name}`, 'success');
-                console.log('? Item created:', data);
+                this.showMessage(`✅ Created: ${data.name}`, 'success');
+                console.log('✅ Item created:', data);
                 return data;
             } else {
-                this.showMessage(`? Failed: ${response.status}`, 'error');
+                this.showMessage(`❌ Failed: ${response.status}`, 'error');
                 console.error('Item creation failed:', responseText);
                 return null;
             }
 
         } catch (error) {
-            this.showMessage(`? Error: ${error.message}`, 'error');
+            this.showMessage(`❌ Error: ${error.message}`, 'error');
             console.error('Network error:', error);
             return null;
         }

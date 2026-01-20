@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🕌 Mosque Donations - Secure Giving Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; }
+        .header { background: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .logo { font-size: 28px; margin-bottom: 10px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .hero { text-align: center; padding: 60px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .hero h1 { font-size: 42px; margin-bottom: 20px; }
+        .campaigns { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin: 40px 0; }
+        .campaign-card { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .progress-bar { height: 10px; background: #e0e0e0; border-radius: 5px; margin: 15px 0; overflow: hidden; }
+        .progress { height: 100%; background: #4CAF50; }
+        .btn { background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .footer { text-align: center; margin-top: 60px; padding: 30px; background: #2c3e50; color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🕌 MosqueDonor</div>
+        <p>Secure, transparent donations for our community</p>
+    </div>
+
+    <div class="hero">
+        <h1>Support Your Mosque with Every Donation</h1>
+        <p>100% of donations go directly to mosque projects and community support</p>
+        <button class="btn" style="margin-top: 20px; padding: 15px 30px; font-size: 18px;">
+            <i class="fas fa-heart"></i> Start Donating
+        </button>
+    </div>
+
+    <div class="container">
+        <h2 style="text-align: center; margin: 40px 0;">Active Campaigns</h2>
+        
+        <div class="campaigns">
+            <div class="campaign-card">
+                <h3><i class="fas fa-mosque"></i> New Mosque Building</h3>
+                <p>Help build a new mosque for our growing community</p>
+                <div class="progress-bar"><div class="progress" style="width: 65%"></div></div>
+                <p><strong>$85,000</strong> raised of $200,000 goal</p>
+                <button class="btn" style="width: 100%; margin-top: 15px;">Donate Now</button>
+            </div>
+            
+            <div class="campaign-card">
+                <h3><i class="fas fa-utensils"></i> Ramadan Food Drive</h3>
+                <p>Provide food packages for needy families this Ramadan</p>
+                <div class="progress-bar"><div class="progress" style="width: 80%"></div></div>
+                <p><strong>$20,000</strong> raised of $25,000 goal</p>
+                <button class="btn" style="width: 100%; margin-top: 15px;">Donate Now</button>
+            </div>
+            
+            <div class="campaign-card">
+                <h3><i class="fas fa-graduation-cap"></i> Islamic School</h3>
+                <p>Support our weekend Islamic education program</p>
+                <div class="progress-bar"><div class="progress" style="width: 45%"></div></div>
+                <p><strong>$22,500</strong> raised of $50,000 goal</p>
+                <button class="btn" style="width: 100%; margin-top: 15px;">Donate Now</button>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 40px 0;">
+            <h3>Recent Donations</h3>
+            <div style="background: white; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                <p><strong>Ahmed</strong> donated $500 to New Mosque Building</p>
+                <p><strong>Fatima</strong> donated $250 to Ramadan Food Drive</p>
+                <p><strong>Anonymous</strong> donated $100 to Islamic School</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2024 MosqueDonor. All donations are secure and Zakat-eligible.</p>
+        <p style="margin-top: 10px; font-size: 14px;">
+            <a href="#" style="color: white; margin: 0 10px;">Privacy Policy</a> | 
+            <a href="#" style="color: white; margin: 0 10px;">FAQ</a> | 
+            <a href="#" style="color: white; margin: 0 10px;">Contact</a>
+        </p>
+    </div>
+
+    <script>
+        // Simple donation modal
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const campaign = this.closest('.campaign-card').querySelector('h3').textContent;
+                const amount = prompt(`Enter donation amount for:\n${campaign}\n\nAmount ($):`);
+                
+                if (amount && !isNaN(amount) && amount > 0) {
+                    const fee = amount * 0.04;
+                    const total = parseFloat(amount) + fee;
+                    
+                    if (confirm(`Donation: $${amount}\n+ 4% fee: $${fee.toFixed(2)}\nTotal: $${total.toFixed(2)}\n\nConfirm donation?`)) {
+                        alert('✅ Thank you for your donation! May Allah accept it.');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
