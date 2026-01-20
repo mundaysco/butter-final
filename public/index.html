@@ -3,231 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>?? Butter Dashboard - Clover Integration</title>
-    <link rel="stylesheet" href="style.css">
+    <title>🕌 Mosque Donations - Secure Giving Platform</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; }
+        .header { background: #2c3e50; color: white; padding: 20px; text-align: center; }
+        .logo { font-size: 28px; margin-bottom: 10px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .hero { text-align: center; padding: 60px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .hero h1 { font-size: 42px; margin-bottom: 20px; }
+        .campaigns { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin: 40px 0; }
+        .campaign-card { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .progress-bar { height: 10px; background: #e0e0e0; border-radius: 5px; margin: 15px 0; overflow: hidden; }
+        .progress { height: 100%; background: #4CAF50; }
+        .btn { background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .footer { text-align: center; margin-top: 60px; padding: 30px; background: #2c3e50; color: white; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <div class="logo">
-                <i class="fas fa-utensils"></i>
-                <h1>Butter Dashboard</h1>
-            </div>
-            <div class="auth-status" id="authStatus">
-                <span class="status-dot"></span>
-                <span>Checking authentication...</span>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Left Sidebar -->
-            <aside class="sidebar">
-                <nav class="nav-menu">
-                    <a href="#" class="nav-item active" data-section="dashboard">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span>Dashboard</span>
-                    </a>
-                    <a href="#" class="nav-item" data-section="inventory">
-                        <i class="fas fa-boxes"></i>
-                        <span>Inventory</span>
-                    </a>
-                    <a href="#" class="nav-item" data-section="orders">
-                        <i class="fas fa-receipt"></i>
-                        <span>Orders</span>
-                    </a>
-                    <a href="#" class="nav-item" data-section="customers">
-                        <i class="fas fa-users"></i>
-                        <span>Customers</span>
-                    </a>
-                    <a href="#" class="nav-item" data-section="settings">
-                        <i class="fas fa-cog"></i>
-                        <span>Settings</span>
-                    </a>
-                </nav>
-                
-                <div class="merchant-info" id="merchantInfo">
-                    <div class="merchant-placeholder">
-                        <i class="fas fa-store"></i>
-                        <p>Connect to Clover to view merchant info</p>
-                    </div>
-                </div>
-
-                <!-- Inventory Quick Actions -->
-                <div class="inventory-actions" id="inventoryActions" style="display: none; padding: 20px; border-top: 1px solid #34495e;">
-                    <h4 style="color: white; margin-bottom: 10px;">Inventory Tools</h4>
-                    <button class="action-btn-small" id="loadInventoryBtn" style="width: 100%; margin-bottom: 8px;">
-                        <i class="fas fa-sync"></i> Load Inventory
-                    </button>
-                    <button class="action-btn-small" id="createItemBtn" style="width: 100%; background: #4CAF50;">
-                        <i class="fas fa-plus"></i> Add Test Item
-                    </button>
-                </div>
-            </aside>
-
-            <!-- Right Content Area -->
-            <section class="content-area">
-                <!-- Dashboard Section -->
-                <div class="section active" id="dashboardSection">
-                    <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
-                    
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: #4CAF50;">
-                                <i class="fas fa-dollar-sign"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3>Today's Revenue</h3>
-                                <p class="stat-value" id="todayRevenue">$0.00</p>
-                                <p class="stat-change">Loading...</p>
-                            </div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: #2196F3;">
-                                <i class="fas fa-shopping-cart"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3>Total Orders</h3>
-                                <p class="stat-value" id="totalOrders">0</p>
-                                <p class="stat-change">Loading...</p>
-                            </div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: #FF9800;">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3>New Customers</h3>
-                                <p class="stat-value" id="newCustomers">0</p>
-                                <p class="stat-change">Loading...</p>
-                            </div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: #9C27B0;">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3>Avg. Order Value</h3>
-                                <p class="stat-value" id="avgOrderValue">$0.00</p>
-                                <p class="stat-change">Loading...</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="action-section">
-                        <h3>Quick Actions</h3>
-                        <div class="action-buttons">
-                            <button class="action-btn" id="connectCloverBtn">
-                                <i class="fas fa-plug"></i>
-                                <span>Connect to Clover</span>
-                            </button>
-                            <button class="action-btn" id="testLiveDataBtn" onclick="butterDashboard.testCloverConnection()">
-                                <i class="fas fa-bolt"></i>
-                                <span>Test Live Data</span>
-                            </button>
-                            <button class="action-btn" id="loadInventoryBtnMain">
-                                <i class="fas fa-boxes"></i>
-                                <span>Manage Inventory</span>
-                            </button>
-                            <button class="action-btn" id="createTestOrderBtn">
-                                <i class="fas fa-plus-circle"></i>
-                                <span>Create Test Order</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Inventory Creation Form -->
-                    <div class="inventory-form" style="margin-top: 30px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                        <h3><i class="fas fa-plus-circle"></i> Create Test Inventory Item</h3>
-                        <form id="createItemForm">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                                <div>
-                                    <label>Item Name</label>
-                                    <input type="text" id="itemName" placeholder="e.g., Test Burger" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                                </div>
-                                <div>
-                                    <label>Price (in cents)</label>
-                                    <input type="number" id="itemPrice" placeholder="999" value="999" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                                    <small style="color: #666;">999 = $9.99</small>
-                                </div>
-                                <div>
-                                    <label>SKU (Optional)</label>
-                                    <input type="text" id="itemSku" placeholder="SKU-001" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                                </div>
-                            </div>
-                            <button type="submit" class="action-btn" style="background: #4CAF50;">
-                                <i class="fas fa-plus"></i> Create Item in Clover
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Inventory Section (initially hidden) -->
-                <div class="section" id="inventorySection" style="display: none;">
-                    <!-- Content will be loaded dynamically -->
-                </div>
-
-                <!-- Other sections -->
-                <div class="section" id="ordersSection" style="display: none;">Orders content...</div>
-                <div class="section" id="customersSection" style="display: none;">Customers content...</div>
-                <div class="section" id="settingsSection" style="display: none;">Settings content...</div>
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <p>?? Butter Clover Integration v2.0 | <span id="currentYear"></span></p>
-            <p class="debug-info">
-                API Status: <span id="apiStatus">Checking...</span> | 
-                Merchant: <span id="merchantIdDisplay">Not connected</span>
-            </p>
-        </footer>
+    <div class="header">
+        <div class="logo">🕌 MosqueDonor</div>
+        <p>Secure, transparent donations for our community</p>
     </div>
 
-    <script src="app.js"></script>
-    <script>
-        // Set current year in footer
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    <div class="hero">
+        <h1>Support Your Mosque with Every Donation</h1>
+        <p>100% of donations go directly to mosque projects and community support</p>
+        <button class="btn" style="margin-top: 20px; padding: 15px 30px; font-size: 18px;">
+            <i class="fas fa-heart"></i> Start Donating
+        </button>
+    </div>
+
+    <div class="container">
+        <h2 style="text-align: center; margin: 40px 0;">Active Campaigns</h2>
         
-        // Navigation handler
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                const section = this.getAttribute('data-section');
+        <div class="campaigns">
+            <div class="campaign-card">
+                <h3><i class="fas fa-mosque"></i> New Mosque Building</h3>
+                <p>Help build a new mosque for our growing community</p>
+                <div class="progress-bar"><div class="progress" style="width: 65%"></div></div>
+                <p><strong>$85,000</strong> raised of $200,000 goal</p>
+                <button class="btn" style="width: 100%; margin-top: 15px;">Donate Now</button>
+            </div>
+            
+            <div class="campaign-card">
+                <h3><i class="fas fa-utensils"></i> Ramadan Food Drive</h3>
+                <p>Provide food packages for needy families this Ramadan</p>
+                <div class="progress-bar"><div class="progress" style="width: 80%"></div></div>
+                <p><strong>$20,000</strong> raised of $25,000 goal</p>
+                <button class="btn" style="width: 100%; margin-top: 15px;">Donate Now</button>
+            </div>
+            
+            <div class="campaign-card">
+                <h3><i class="fas fa-graduation-cap"></i> Islamic School</h3>
+                <p>Support our weekend Islamic education program</p>
+                <div class="progress-bar"><div class="progress" style="width: 45%"></div></div>
+                <p><strong>$22,500</strong> raised of $50,000 goal</p>
+                <button class="btn" style="width: 100%; margin-top: 15px;">Donate Now</button>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 40px 0;">
+            <h3>Recent Donations</h3>
+            <div style="background: white; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                <p><strong>Ahmed</strong> donated $500 to New Mosque Building</p>
+                <p><strong>Fatima</strong> donated $250 to Ramadan Food Drive</p>
+                <p><strong>Anonymous</strong> donated $100 to Islamic School</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2024 MosqueDonor. All donations are secure and Zakat-eligible.</p>
+        <p style="margin-top: 10px; font-size: 14px;">
+            <a href="#" style="color: white; margin: 0 10px;">Privacy Policy</a> | 
+            <a href="#" style="color: white; margin: 0 10px;">FAQ</a> | 
+            <a href="#" style="color: white; margin: 0 10px;">Contact</a>
+        </p>
+    </div>
+
+    <script>
+        // Simple donation modal
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const campaign = this.closest('.campaign-card').querySelector('h3').textContent;
+                const amount = prompt(`Enter donation amount for:\n${campaign}\n\nAmount ($):`);
                 
-                // Hide all sections
-                document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
-                
-                // Show selected section
-                const targetSection = document.getElementById(section + 'Section');
-                if (targetSection) {
-                    targetSection.style.display = 'block';
-                }
-                
-                // Update active nav item
-                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Load inventory if navigating to inventory section
-                if (section === 'inventory' && window.butterDashboard && window.butterDashboard.token) {
-                    window.butterDashboard.loadInventory();
+                if (amount && !isNaN(amount) && amount > 0) {
+                    const fee = amount * 0.04;
+                    const total = parseFloat(amount) + fee;
+                    
+                    if (confirm(`Donation: $${amount}\n+ 4% fee: $${fee.toFixed(2)}\nTotal: $${total.toFixed(2)}\n\nConfirm donation?`)) {
+                        alert('✅ Thank you for your donation! May Allah accept it.');
+                    }
                 }
             });
         });
-        
-        // Update merchant ID display
-        setInterval(() => {
-            const merchantId = localStorage.getItem('clover_merchant_id');
-            if (merchantId) {
-                document.getElementById('merchantIdDisplay').textContent = merchantId.substring(0, 8) + '...';
-                document.getElementById('merchantIdDisplay').style.color = '#4CAF50';
-            }
-        }, 1000);
     </script>
 </body>
 </html>
