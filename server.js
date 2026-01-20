@@ -1,4 +1,3 @@
-# Last deployment: 2026-01-19 19:01:12
 const express = require("express");
 const fetch = require("node-fetch");
 const app = express();
